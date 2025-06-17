@@ -33,44 +33,59 @@ gpio_config_t led_config = {
     .pull = GPIO_PULL_NONE
 };
 
-
 // Button Configuration with Interrupt
-gpio_interrupt_config_t button_config = {
-    .gpio_config = {
+gpio_config_t button_config = {
         .port = GPIOA,
         .pin = 0,
         .mode = GPIO_MODE_INPUT,
         .pull = GPIO_PULL_UP
-    },
-    .interrupt_enable = 1,
-    .trigger_type = EXTI_TRIGGER_FALLING,
-    .priority = 5,
-    .callback = EXTI0_IRQHandler
 };
-
-// Interrupt Service Routine
-void EXTI0_IRQHandler(void) {
-    // Check if EXTI0 triggered the interrupt
-    if (EXTI->PR & EXTI_PR_PR0) {
-        // Clear the pending bit
-        EXTI->PR |= EXTI_PR_PR0;
-
-        // Set flag for main loop
-        gpio_toggle_pin(GPIOC, 13);
-
-        // Optional: Add debouncing delay
-        for (volatile int i = 0; i < 10000; i++);
-    }
-}
 
 
 int main(void)
 {
     // Initialize LED
     gpio_init(&led_config);
-
+    gpio_init(&button_config);
     // Initialize button with interrupt
-    gpio_interrupt_init(&button_config);
+//    gpio_interrupt_init(&button_config);
     /* Loop forever */
-	for(;;);
+	for(;;){
+		gpio_write_pin(led_config.port, led_config.pin, 1);
+		for(volatile int i = 0; i < 10000; i++);
+
+		if( gpio_read_pin(button_config.port, button_config.pin)){
+			gpio_toggle_pin(led_config.port, led_config.pin);
+		}
+	}
 }
+
+
+//// Button Configuration with Interrupt
+//gpio_interrupt_config_t button_config = {
+//    .gpio_config = {
+//        .port = GPIOA,
+//        .pin = 0,
+//        .mode = GPIO_MODE_INPUT,
+//        .pull = GPIO_PULL_UP
+//    },
+//    .interrupt_enable = 1,
+//    .trigger_type = EXTI_TRIGGER_FALLING,
+//    .priority = 5,
+//    .callback = EXTI0_IRQHandler
+//};
+//
+//// Interrupt Service Routine
+//void EXTI0_IRQHandler(void) {
+//    // Check if EXTI0 triggered the interrupt
+//    if (EXTI->PR & EXTI_PR_PR0) {
+//        // Clear the pending bit
+//        EXTI->PR |= EXTI_PR_PR0;
+//
+//        // Set flag for main loop
+//        gpio_toggle_pin(GPIOC, 13);
+//
+//        // Optional: Add debouncing delay
+//        for (volatile int i = 0; i < 10000; i++);
+//    }
+//}

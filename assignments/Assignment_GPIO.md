@@ -350,9 +350,7 @@ typedef enum {
 - **Logic Analyzer/Oscilloscope**: Signal verification
 
 #### Support
-- **Course Forum**: Technical questions and discussions
 - **WhatsApp Group**: Quick questions and peer support
-- **Office Hours**: Schedule via email for complex issues
 
 ---
 

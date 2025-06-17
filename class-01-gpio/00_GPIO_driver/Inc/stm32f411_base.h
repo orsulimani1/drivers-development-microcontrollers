@@ -10,6 +10,7 @@
 
 
 #include <stdint.h>
+#include <stdio.h>
 
 // STM32F411 Base Addresses
 #define PERIPH_BASE           0x40000000UL

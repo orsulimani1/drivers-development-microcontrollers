@@ -29,6 +29,7 @@ gpio_status_t gpio_init(const gpio_config_t *config){
 	gpio_set_pull(config->port, config->pin, config->pull);
 
 	// GPIO set speed
+
 	gpio_set_alternate_function(config->port, config->pin, config->alternate);
 
 	return GPIO_OK;

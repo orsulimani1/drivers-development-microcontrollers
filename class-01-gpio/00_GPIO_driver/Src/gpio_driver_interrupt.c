@@ -63,6 +63,7 @@ static gpio_status_t gpio_enable_exti_interrupt(uint8_t pin) {
 }
 
 static gpio_status_t gpio_configure_nvic(uint8_t pin, uint8_t priority) {
+	//check within the priotiy size
     IRQn_Type irq_num;
     switch (pin) {
 		case 0:
@@ -93,7 +94,7 @@ static gpio_status_t gpio_configure_nvic(uint8_t pin, uint8_t priority) {
 	}
 
     // Set priority and enable interrupt in NVIC
-    NVIC_SetPriority(irq_num, priority);
+    NVIC_SetPriority(irq_num, priority); // check data validity from outside the func
     NVIC_EnableIRQ(irq_num);
 
     return GPIO_OK;
@@ -101,19 +102,23 @@ static gpio_status_t gpio_configure_nvic(uint8_t pin, uint8_t priority) {
 
 gpio_status_t gpio_interrupt_init(const gpio_interrupt_config_t *config) {
     if (!config) return GPIO_ERROR_INVALID_PARAM;
-
+    gpio_status_t ret = GPIO_OK;
     // Step 1: Configure GPIO
-
+    if((ret = gpio_init(config)) != GPIO_OK){
+    	return ret;
+    }
     // Step 2: Enable SYSCFG clock
-
+    gpio_enable_syscfg_clock();
     // Step 3: Map GPIO to EXTI line
-
+    if((ret = gpio_map_exti_line(config->gpio_config.port, config->gpio_config.pin))!= GPIO_OK){
+    	return ret;
+    }
     // Step 4: Configure trigger type
-
+    gpio_configure_exti_trigger(config->gpio_config.pin, config->trigger_type);// check for errors
     // Step 5: Enable EXTI interrupt
-
+    gpio_enable_exti_interrupt(config->gpio_config.pin); // check for errors later
     // Step 6: Configure NVIC
-
+    gpio_configure_nvic(config->gpio_config.pin, config->priority);
     // Step 7: Store callback function
 
     return GPIO_OK;

@@ -9,7 +9,9 @@
 #define GPIO_DRIVER_INTERRUPT_H_
 
 #include "gpio_driver.h"
+
 typedef enum {
+	EXTI_TRIGGER_NONE,
     EXTI_TRIGGER_RISING = 1,
     EXTI_TRIGGER_FALLING = 2,
     EXTI_TRIGGER_BOTH = 3

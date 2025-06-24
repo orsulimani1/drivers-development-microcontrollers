@@ -1,0 +1,7 @@
+"./Src/gpio_driver.o"
+"./Src/gpio_driver_interrupt.o"
+"./Src/i2c_driver.o"
+"./Src/main.o"
+"./Src/syscalls.o"
+"./Src/sysmem.o"
+"./Startup/startup_stm32f411vetx.o"

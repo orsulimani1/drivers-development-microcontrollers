@@ -5,8 +5,8 @@
  *      Author: Orr
  */
 
-#ifndef I2C_DRIVER_H_
-#define I2C_DRIVER_H_
+#ifndef I2C_POLLING_DRIVER_H_
+#define I2C_POLLING_DRIVER_H_
 
 #include "stm32f411_base.h"
 #include "i2c_common_driver.h"

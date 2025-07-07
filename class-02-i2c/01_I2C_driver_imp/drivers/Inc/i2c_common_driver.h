@@ -5,8 +5,8 @@
  *      Author: Orr
  */
 
-#ifndef I2C_DRIVER_H_
-#define I2C_DRIVER_H_
+#ifndef I2C_COMMON_DRIVER_H_
+#define I2C_COMMON_DRIVER_H_
 
 #include "stm32f411_base.h"
 #include "gpio_driver.h"

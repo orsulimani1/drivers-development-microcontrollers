@@ -52,8 +52,6 @@ typedef struct {
 // Initialization with interrupt and transfer handle
 i2c_status_t i2c_init_interrupt(const i2c_config_t *config, i2c_transfer_t *transfer);
 
-void configure_i2c_nvic(I2C_TypeDef *i2c);
-
 // Non-blocking master operations
 i2c_status_t i2c_master_transmit_it(i2c_transfer_t *transfer, uint8_t slave_addr,
                                     const uint8_t *data, uint16_t length);

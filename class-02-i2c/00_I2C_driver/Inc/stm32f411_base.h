@@ -8,7 +8,7 @@
 #ifndef STM32F411_BASE_H_
 #define STM32F411_BASE_H_
 
-
+#include <stdio.h>
 #include <stdint.h>
 
 // STM32F411 Base Addresses
@@ -57,8 +57,13 @@ typedef enum {
     EXTI4_IRQn              = 10,
     /* Add other peripheral interrupts as needed */
 	EXTI5_9_IRQn			= 23,
+    I2C1_EV_IRQn            = 31,
+    I2C1_ER_IRQn                ,
+    I2C2_EV_IRQn                ,
+    I2C2_ER_IRQn                ,
 	EXTI15_10_IRQn			= 40,
-	CUSTOM_IRQ2             = 43   /* Example custom interrupt */
+	I2C3_EV_IRQn            = 72, 
+    I2C3_ER_IRQn                ,
 } IRQn_Type;
 
 // GPIO Register Structure

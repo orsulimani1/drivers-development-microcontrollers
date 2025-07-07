@@ -7,10 +7,6 @@
 
 #include "i2c_interrupt_driver.h"
 
-static i2c_transfer_t *g_i2c1_transfer = NULL;
-static i2c_transfer_t *g_i2c2_transfer = NULL;
-static i2c_transfer_t *g_i2c3_transfer = NULL;
-
 // Static helper functions for student implementation
 static i2c_status_t i2c_set_callbacks(i2c_transfer_t *transfer,
                                       i2c_transfer_callback_t tx_callback,
@@ -68,12 +64,10 @@ i2c_status_t i2c_init_interrupt(const i2c_config_t *config, i2c_transfer_t *tran
     transfer->rx_complete_callback = NULL;
     transfer->user_data = NULL;
     
-    configure_i2c_interrupt_handler(transfer);
-
     // Configure NVIC
     I2C_TypeDef *i2c = transfer->i2c_instance;
     configure_i2c_nvic(i2c);
-    
+
     return i2c_enable_interrupts(i2c);
 }
 
@@ -99,22 +93,6 @@ void configure_i2c_nvic(I2C_TypeDef *i2c)
         NVIC_EnableIRQ(I2C3_ER_IRQn);
         NVIC_SetPriority(I2C3_EV_IRQn, 5);
         NVIC_SetPriority(I2C3_ER_IRQn, 4);
-    }
-}
-void configure_i2c_interrupt_handler(i2c_transfer_t *transfer){
-    I2C_TypeDef *i2c = transfer->i2c_instance;
-
-    if (i2c == I2C1)
-    {
-        g_i2c1_transfer = transfer;
-    }
-    else if (i2c == I2C2)
-    {
-        g_i2c2_transfer = transfer;
-    }
-    else if (i2c == I2C3)
-    {
-        g_i2c3_transfer = transfer;
     }
 }
 
@@ -185,21 +163,7 @@ i2c_status_t i2c_transmit_buffered(i2c_transfer_t *transfer, uint8_t slave_addr,
     // 2. If transfer is idle, start transmission using i2c_master_transmit_it()
     
     // 3. If transfer is busy, data will be sent automatically by ISR
-    
-    if (!transfer || !data || length == 0) {
-        return I2C_STATUS_INVALID;
-    }
-    
-    // Add data to buffer
-    if (ring_buffer_put_multiple(&transfer->tx_buffer, data, length) != RING_BUFFER_OK) {
-        return I2C_STATUS_ERROR;
-    }
-    
-    // Start transmission if idle
-    if (transfer->state == I2C_STATE_IDLE) {
-        return i2c_master_transmit_it(transfer, slave_addr, data, length);
-    }
-    
+        
     return I2C_STATUS_OK;
 }
 
@@ -223,18 +187,7 @@ i2c_status_t i2c_abort_transfer(i2c_transfer_t *transfer) {
     if (!transfer) {
         return I2C_STATUS_INVALID;
     }
-    
-    // Generate STOP
-    transfer->i2c_instance->CR1.fields.STOP = 1;
-    
-    // Reset state
-    transfer->state = I2C_STATE_IDLE;
-    transfer->status = I2C_STATUS_OK;
-    
-    // Flush buffers
-    ring_buffer_flush(&transfer->tx_buffer);
-    ring_buffer_flush(&transfer->rx_buffer);
-    
+        
     return I2C_STATUS_OK;
 }
 
@@ -248,31 +201,20 @@ void i2c_event_irq_handler(i2c_transfer_t *transfer) {
     // State machine: Handle events based on current state
     switch (transfer->state) {
         case I2C_STATE_START_SENT:
-            if (sr1 & I2C_SR1_SB) {
-                i2c_handle_start_sent(transfer, current_slave_addr, current_direction);
-            }
+
             break;
             
         case I2C_STATE_ADDRESS_SENT_TX:
         case I2C_STATE_ADDRESS_SENT_RX:
-            if (sr1 & I2C_SR1_ADDR) {
-                i2c_handle_address_sent(transfer);
-            }
+
             break;
             
         case I2C_STATE_DATA_TX:
-            if (sr1 & I2C_SR1_TXE) {
-                i2c_handle_tx_empty(transfer);
-            }
-            if (sr1 & I2C_SR1_BTF) {
-                i2c_handle_transfer_complete(transfer);
-            }
+
             break;
             
         case I2C_STATE_DATA_RX:
-            if (sr1 & I2C_SR1_RXNE) {
-                i2c_handle_rx_not_empty(transfer);
-            }
+
             break;
             
         default:
@@ -318,13 +260,11 @@ void i2c_error_irq_handler(i2c_transfer_t *transfer) {
     }
     
     // Clear error flags
-    i2c_clear_error_flags(i2c);
     
     // Set error state
-    transfer->state = I2C_STATE_ERROR;
+    transfer->state = -1;
     
     // Generate STOP
-    i2c->CR1.fields.STOP = 1;
 }
 
 // Interrupt control functions
@@ -334,9 +274,9 @@ i2c_status_t i2c_enable_interrupts(I2C_TypeDef *i2c) {
     
     if (!i2c) return I2C_STATUS_INVALID;
     
-    i2c->CR2.fields.ITEVTEN = 1;  // Enable event interrupts
-    i2c->CR2.fields.ITERREN = 1;  // Enable error interrupts
-    i2c->CR2.fields.ITBUFEN = 1;  // Enable buffer interrupts
+    // Enable event interrupts
+    // Enable error interrupts
+    // Enable buffer interrupts
     
     return I2C_STATUS_OK;
 }
@@ -346,11 +286,11 @@ i2c_status_t i2c_disable_interrupts(I2C_TypeDef *i2c) {
     // Disable all interrupts in CR2 register
     
     if (!i2c) return I2C_STATUS_INVALID;
-    
-    i2c->CR2.fields.ITEVTEN = 0;
-    i2c->CR2.fields.ITERREN = 0;
-    i2c->CR2.fields.ITBUFEN = 0;
-    
+
+    // event interrupts
+    // error interrupts
+    // buffer interrupts
+
     return I2C_STATUS_OK;
 }
 
@@ -377,9 +317,7 @@ static void i2c_handle_start_sent(i2c_transfer_t *transfer, uint8_t slave_addr, 
     
     // Update state based on direction
     if (direction == I2C_DIRECTION_WRITE) {
-        transfer->state = I2C_STATE_ADDRESS_SENT_TX;
     } else {
-        transfer->state = I2C_STATE_ADDRESS_SENT_RX;
     }
 }
 
@@ -463,34 +401,3 @@ static void i2c_handle_transfer_complete(i2c_transfer_t *transfer) {
         transfer->rx_complete_callback(transfer->user_data);
     }
 }
-
-
-void I2C1_EV_IRQHandler(void) {
-    if(g_i2c1_transfer)
-        i2c_event_irq_handler(g_i2c1_transfer);
-}
-
-void I2C1_ER_IRQHandler(void) {
-    if(g_i2c1_transfer)
-        i2c_event_irq_handler(g_i2c1_transfer);
-}
-
-void I2C2_EV_IRQHandler(void) {
-    if(g_i2c2_transfer)
-        i2c_event_irq_handler(g_i2c2_transfer);
-}
-
-void I2C2_ER_IRQHandler(void) {
-    if(g_i2c2_transfer)
-        i2c_event_irq_handler(g_i2c2_transfer);
-}
-void I2C3_EV_IRQHandler(void) {
-    if(g_i2c3_transfer)
-        i2c_event_irq_handler(g_i2c3_transfer);
-}
-
-void I2C3_ER_IRQHandler(void) {
-    if(g_i2c3_transfer)
-        i2c_event_irq_handler(g_i2c3_transfer);
-}
-

@@ -55,7 +55,7 @@ i2c_status_t i2c_init_interrupt(const i2c_config_t *config, i2c_transfer_t *tran
     }
     
     // Setup transfer structure
-    transfer->i2c_instance = &config->i2c_config;
+    transfer->i2c_instance = config->i2c_config;
     ring_buffer_init(&transfer->tx_buffer);
     ring_buffer_init(&transfer->rx_buffer);
     transfer->state = I2C_STATE_IDLE;

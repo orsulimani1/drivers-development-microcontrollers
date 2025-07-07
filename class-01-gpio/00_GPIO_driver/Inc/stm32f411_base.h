@@ -8,7 +8,7 @@
 #ifndef STM32F411_BASE_H_
 #define STM32F411_BASE_H_
 
-
+#include <stdio.h>
 #include <stdint.h>
 
 // STM32F411 Base Addresses
@@ -57,8 +57,13 @@ typedef enum {
     EXTI4_IRQn              = 10,
     /* Add other peripheral interrupts as needed */
 	EXTI5_9_IRQn			= 23,
+    I2C1_EV_IRQn            = 31,
+    I2C1_ER_IRQn                ,
+    I2C2_EV_IRQn                ,
+    I2C2_ER_IRQn                ,
 	EXTI15_10_IRQn			= 40,
-	CUSTOM_IRQ2             = 43   /* Example custom interrupt */
+	I2C3_EV_IRQn            = 72, 
+    I2C3_ER_IRQn                ,
 } IRQn_Type;
 
 // GPIO Register Structure
@@ -146,6 +151,11 @@ typedef struct {
 #define RCC_AHB1ENR_GPIOAEN     (1UL << 0)
 #define RCC_APB2ENR_SYSCFGEN    (1UL << 14)
 
+#define RCC_APB1ENR_I2C1EN      (1UL << 21)
+#define RCC_APB1ENR_I2C2EN      (1UL << 22)
+#define RCC_APB1ENR_I2C3EN      (1UL << 23)
+
+
 // GPIO MODER bits
 #define GPIO_MODER_INPUT        (0UL)
 #define GPIO_MODER_OUTPUT       (1UL)
@@ -181,5 +191,178 @@ static inline void NVIC_SetPriority(uint8_t IRQn, uint32_t priority) {
 static inline void NVIC_SetPending(uint8_t IRQn){
 	NVIC->ISPR[IRQn >> 5] = (1 << (IRQn & 0x1F));
 }
+
+
+/**
+ * @defgroup I2C_Base_Definitions Base Type Definitions
+ * @{
+ */
+
+/**
+ * @brief I2C register bitfield structures
+ * Based on STM32F411 Reference Manual Chapter 18
+ */
+
+// I2C Control Register 1 bitfield
+typedef struct {
+    uint32_t PE          : 1;  // Bit 0: Peripheral Enable
+    uint32_t SMBUS       : 1;  // Bit 1: SMBus Mode
+    uint32_t RESERVED_2  : 1;  // Bit 2: Reserved
+    uint32_t SMBTYPE     : 1;  // Bit 3: SMBus Type
+    uint32_t ENARP       : 1;  // Bit 4: ARP Enable
+    uint32_t ENPEC       : 1;  // Bit 5: PEC Enable
+    uint32_t ENGC        : 1;  // Bit 6: General Call Enable
+    uint32_t NOSTRETCH   : 1;  // Bit 7: Clock Stretching Disable
+    uint32_t START       : 1;  // Bit 8: Start Generation
+    uint32_t STOP        : 1;  // Bit 9: Stop Generation
+    uint32_t ACK         : 1;  // Bit 10: Acknowledge Enable
+    uint32_t POS         : 1;  // Bit 11: Acknowledge Position
+    uint32_t PEC         : 1;  // Bit 12: Packet Error Checking
+    uint32_t ALERT       : 1;  // Bit 13: SMBus Alert
+    uint32_t RESERVED_14 : 1;  // Bit 14: Reserved
+    uint32_t SWRST       : 1;  // Bit 15: Software Reset
+    uint32_t RESERVED_31_16 : 16; // Bits 31:16: Reserved
+} I2C_CR1_BitField;
+
+// I2C Control Register 2 bitfield
+typedef struct {
+    uint32_t FREQ        : 6;  // Bits 5:0: Peripheral Clock Frequency
+    uint32_t RESERVED_7_6 : 2; // Bits 7:6: Reserved
+    uint32_t ITERREN     : 1;  // Bit 8: Error Interrupt Enable
+    uint32_t ITEVTEN     : 1;  // Bit 9: Event Interrupt Enable
+    uint32_t ITBUFEN     : 1;  // Bit 10: Buffer Interrupt Enable
+    uint32_t DMAEN       : 1;  // Bit 11: DMA Requests Enable
+    uint32_t LAST        : 1;  // Bit 12: DMA Last Transfer
+    uint32_t RESERVED_31_13 : 19; // Bits 31:13: Reserved
+} I2C_CR2_BitField;
+
+// I2C Own Address Register 1 bitfield
+typedef struct {
+    uint32_t ADD0        : 1;  // Bit 0: Interface Address (10-bit mode)
+    uint32_t ADD7_1      : 7;  // Bits 7:1: Interface Address bits 7:1
+    uint32_t ADD9_8      : 2;  // Bits 9:8: Interface Address bits 9:8 (10-bit mode)
+    uint32_t RESERVED_14_10 : 5; // Bits 14:10: Reserved
+    uint32_t ADDMODE     : 1;  // Bit 15: Addressing Mode (7-bit/10-bit)
+    uint32_t RESERVED_31_16 : 16; // Bits 31:16: Reserved
+} I2C_OAR1_BitField;
+
+// I2C Data Register bitfield
+typedef struct {
+    uint32_t DR          : 8;  // Bits 7:0: 8-bit Data Register
+    uint32_t RESERVED_31_8 : 24; // Bits 31:8: Reserved
+} I2C_DR_BitField;
+
+// I2C Status Register 1 bitfield
+typedef struct {
+    uint32_t SB          : 1;  // Bit 0: Start Bit
+    uint32_t ADDR        : 1;  // Bit 1: Address Sent/Matched
+    uint32_t BTF         : 1;  // Bit 2: Byte Transfer Finished
+    uint32_t ADD10       : 1;  // Bit 3: 10-bit Header Sent
+    uint32_t STOPF       : 1;  // Bit 4: Stop Detection
+    uint32_t RESERVED_5  : 1;  // Bit 5: Reserved
+    uint32_t RXNE        : 1;  // Bit 6: Data Register Not Empty (RX)
+    uint32_t TXE         : 1;  // Bit 7: Data Register Empty (TX)
+    uint32_t BERR        : 1;  // Bit 8: Bus Error
+    uint32_t ARLO        : 1;  // Bit 9: Arbitration Lost
+    uint32_t AF          : 1;  // Bit 10: Acknowledge Failure
+    uint32_t OVR         : 1;  // Bit 11: Overrun/Underrun
+    uint32_t PECERR      : 1;  // Bit 12: PEC Error
+    uint32_t RESERVED_13 : 1;  // Bit 13: Reserved
+    uint32_t TIMEOUT     : 1;  // Bit 14: Timeout Error
+    uint32_t SMBALERT    : 1;  // Bit 15: SMBus Alert
+    uint32_t RESERVED_31_16 : 16; // Bits 31:16: Reserved
+} I2C_SR1_BitField;
+
+// I2C Status Register 2 bitfield
+typedef struct {
+    uint32_t MSL         : 1;  // Bit 0: Master/Slave
+    uint32_t BUSY        : 1;  // Bit 1: Bus Busy
+    uint32_t TRA         : 1;  // Bit 2: Transmitter/Receiver
+    uint32_t RESERVED_3  : 1;  // Bit 3: Reserved
+    uint32_t GENCALL     : 1;  // Bit 4: General Call Address
+    uint32_t SMBDEFAULT  : 1;  // Bit 5: SMBus Device Default Address
+    uint32_t SMBHOST     : 1;  // Bit 6: SMBus Host Header
+    uint32_t DUALF       : 1;  // Bit 7: Dual Flag
+    uint32_t PEC         : 8;  // Bits 15:8: Packet Error Checking Register
+    uint32_t RESERVED_31_16 : 16; // Bits 31:16: Reserved
+} I2C_SR2_BitField;
+
+// I2C Clock Control Register bitfield
+typedef struct {
+    uint32_t CCR         : 12; // Bits 11:0: Clock Control Register
+    uint32_t RESERVED_13_12 : 2; // Bits 13:12: Reserved
+    uint32_t DUTY        : 1;  // Bit 14: Fast Mode Duty Cycle
+    uint32_t FS          : 1;  // Bit 15: I2C Master Mode Selection
+    uint32_t RESERVED_31_16 : 16; // Bits 31:16: Reserved
+} I2C_CCR_BitField;
+
+// I2C TRISE Register bitfield
+typedef struct {
+    uint32_t TRISE       : 6;  // Bits 5:0: Maximum Rise Time
+    uint32_t RESERVED_31_6 : 26; // Bits 31:6: Reserved
+} I2C_TRISE_BitField;
+
+/**
+ * @brief I2C peripheral register structure
+ */
+typedef struct {
+    union {
+        volatile uint32_t     value;
+        volatile I2C_CR1_BitField  fields;
+    } CR1;      // Control register 1
+
+    union {
+        volatile uint32_t     value;
+        volatile I2C_CR2_BitField  fields;
+    } CR2;      // Control register 2
+
+    union {
+        volatile uint32_t     value;
+        volatile I2C_OAR1_BitField fields;
+    } OAR1;     // Own address register 1
+
+    volatile uint32_t     OAR2;     // Own address register 2
+
+    union {
+        volatile uint32_t     value;
+        volatile I2C_DR_BitField   fields;
+    } DR;       // Data register
+
+    union {
+        volatile uint32_t     value;
+        volatile I2C_SR1_BitField  fields;
+    } SR1;      // Status register 1
+
+    union {
+        volatile uint32_t     value;
+        volatile I2C_SR2_BitField  fields;
+    } SR2;      // Status register 2
+
+    union {
+        volatile uint32_t     value;
+        volatile I2C_CCR_BitField  fields;
+    } CCR;      // Clock control register
+
+    union {
+        volatile uint32_t     value;
+        volatile I2C_TRISE_BitField fields;
+    } TRISE;    // TRISE register
+
+    volatile uint32_t     FLTR;     // FLTR register
+} I2C_TypeDef;
+
+/**
+ * @brief I2C base addresses
+ */
+#define I2C1_BASE           0x40005400UL
+#define I2C2_BASE           0x40005800UL
+#define I2C3_BASE           0x40005C00UL
+
+#define I2C1                ((I2C_TypeDef *)I2C1_BASE)
+#define I2C2                ((I2C_TypeDef *)I2C2_BASE)
+#define I2C3                ((I2C_TypeDef *)I2C3_BASE)
+
+
+
 
 #endif /* STM32F411_BASE_H_ */

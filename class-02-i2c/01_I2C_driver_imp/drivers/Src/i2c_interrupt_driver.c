@@ -7,6 +7,9 @@
 
 #include "i2c_interrupt_driver.h"
 
+extern i2c_status_t i2c_clear_error_flags(I2C_TypeDef *i2c);
+
+
 static i2c_transfer_t *g_i2c1_transfer = NULL;
 static i2c_transfer_t *g_i2c2_transfer = NULL;
 static i2c_transfer_t *g_i2c3_transfer = NULL;
@@ -22,8 +25,9 @@ static void i2c_handle_address_sent(i2c_transfer_t *transfer);
 static void i2c_handle_tx_empty(i2c_transfer_t *transfer);
 static void i2c_handle_rx_not_empty(i2c_transfer_t *transfer);
 static void i2c_handle_transfer_complete(i2c_transfer_t *transfer);
-static void configure_i2c_nvic(I2C_TypeDef *i2c);
 
+static void configure_i2c_nvic(I2C_TypeDef *i2c);
+static void configure_i2c_interrupt_handler(i2c_transfer_t *transfer);
 // State machine tracking variables (could be per-transfer in real implementation)
 static uint8_t current_slave_addr = 0;
 static i2c_direction_t current_direction = I2C_DIRECTION_WRITE;
@@ -59,7 +63,7 @@ i2c_status_t i2c_init_interrupt(const i2c_config_t *config, i2c_transfer_t *tran
     }
     
     // Setup transfer structure
-    transfer->i2c_instance = &config->i2c_config;
+    transfer->i2c_instance = config->i2c_config;
     ring_buffer_init(&transfer->tx_buffer);
     ring_buffer_init(&transfer->rx_buffer);
     transfer->state = I2C_STATE_IDLE;
@@ -77,7 +81,7 @@ i2c_status_t i2c_init_interrupt(const i2c_config_t *config, i2c_transfer_t *tran
     return i2c_enable_interrupts(i2c);
 }
 
-void configure_i2c_nvic(I2C_TypeDef *i2c)
+static void configure_i2c_nvic(I2C_TypeDef *i2c)
 {
     if (i2c == I2C1)
     {
@@ -101,7 +105,7 @@ void configure_i2c_nvic(I2C_TypeDef *i2c)
         NVIC_SetPriority(I2C3_ER_IRQn, 4);
     }
 }
-void configure_i2c_interrupt_handler(i2c_transfer_t *transfer){
+static void configure_i2c_interrupt_handler(i2c_transfer_t *transfer){
     I2C_TypeDef *i2c = transfer->i2c_instance;
 
     if (i2c == I2C1)

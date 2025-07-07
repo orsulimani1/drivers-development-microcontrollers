@@ -77,7 +77,7 @@ typedef enum {
 typedef struct {
     gpio_config_t       *i2c_sda_gpio;     ///< SDA pin GPIO configuration
     gpio_config_t       *i2c_scl_gpio;     ///< SCL pin GPIO configuration
-    I2C_TypeDef         i2c_config;       /// i2c config struct
+    I2C_TypeDef         *i2c_config;       /// i2c config struct
     uint32_t            clock_speed;      ///< SCL frequency in Hz (100000 or 400000)
     i2c_duty_cycle_t    duty_cycle;       ///< SCL duty cycle (fast mode only)
     i2c_addr_mode_t     addr_mode;        ///< 7-bit or 10-bit addressing

@@ -145,7 +145,7 @@ i2c_status_t i2c_init(const i2c_config_t *config){
       return ret;
    }
 // 2. Configure GPIO pins using config->I2C_SCL and config->I2C_SDA
-   I2C_TypeDef *i2c = &config->i2c_config;
+   I2C_TypeDef *i2c = config->i2c_config;
 
 //    - Initialize SCL and SDA pins with gpio_init()
    gpio_init(config->i2c_scl_gpio);
@@ -183,7 +183,7 @@ i2c_status_t i2c_deinit(i2c_config_t *config){
       return I2C_STATUS_INVALID;
    }
    
-   I2C_TypeDef *i2c = &config->i2c_config;
+   I2C_TypeDef *i2c = config->i2c_config;
    
    // 2. Disable I2C peripheral
    i2c->CR1.fields.PE = 0;

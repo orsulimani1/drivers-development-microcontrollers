@@ -79,7 +79,7 @@ i2c_status_t i2c_master_transmit(i2c_config_t *config, uint8_t slave_addr,
    if (!config || !data || length == 0) {
          return I2C_STATUS_INVALID;
    }
-   I2C_TypeDef *i2c = &config->i2c_config;
+   I2C_TypeDef *i2c = config->i2c_config;
    if (i2c_is_busy(i2c)) {
       return I2C_STATUS_BUSY;
    }
@@ -105,7 +105,7 @@ i2c_status_t i2c_master_receive(i2c_config_t *config, uint8_t slave_addr,
       return I2C_STATUS_INVALID;
    }
    
-   I2C_TypeDef *i2c = &config->i2c_config;
+   I2C_TypeDef *i2c = config->i2c_config;
    
    if (i2c_is_busy(i2c)) {
       return I2C_STATUS_BUSY;
@@ -133,7 +133,7 @@ i2c_status_t i2c_master_write_read(i2c_config_t *config, uint8_t slave_addr,
       return I2C_STATUS_INVALID;
    }
    
-   I2C_TypeDef *i2c = &config->i2c_config;
+   I2C_TypeDef *i2c = config->i2c_config;
    i2c_status_t status;
    // 2. WRITE PHASE:
 //    - Generate START using i2c_generate_start()

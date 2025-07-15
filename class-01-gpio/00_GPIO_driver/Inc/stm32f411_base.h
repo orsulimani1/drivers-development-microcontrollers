@@ -150,10 +150,17 @@ typedef struct {
 // Register Bit Definitions
 #define RCC_AHB1ENR_GPIOAEN     (1UL << 0)
 #define RCC_APB2ENR_SYSCFGEN    (1UL << 14)
+#define RCC_APB2ENR_SPI1EN      (1UL << 12)
+#define RCC_APB2ENR_SPI4EN      (1UL << 13)
+
+
 
 #define RCC_APB1ENR_I2C1EN      (1UL << 21)
 #define RCC_APB1ENR_I2C2EN      (1UL << 22)
 #define RCC_APB1ENR_I2C3EN      (1UL << 23)
+#define RCC_APB1ENR_SPI1EN      (1UL << 21)
+#define RCC_APB1ENR_SPI2EN      (1UL << 14)
+#define RCC_APB1ENR_SPI3EN      (1UL << 25)
 
 
 // GPIO MODER bits

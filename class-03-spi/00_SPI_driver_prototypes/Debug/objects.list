@@ -2,7 +2,7 @@
 "./Drivers/Src/spi_common.o"
 "./Drivers/Src/spi_int.o"
 "./Drivers/Src/spi_polling.o"
-"./Src/main.o"
+"./Src/main_int.o"
 "./Src/syscalls.o"
 "./Src/sysmem.o"
 "./Startup/startup_stm32f411vetx.o"

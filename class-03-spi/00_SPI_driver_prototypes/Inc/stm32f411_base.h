@@ -61,6 +61,9 @@ typedef enum {
     I2C1_ER_IRQn                ,
     I2C2_EV_IRQn                ,
     I2C2_ER_IRQn                ,
+	SPI1_IRQn					,
+	SPI2_IRQn					,
+
 	EXTI15_10_IRQn			= 40,
 	I2C3_EV_IRQn            = 72, 
     I2C3_ER_IRQn                ,
@@ -155,6 +158,11 @@ typedef struct {
 #define RCC_APB1ENR_I2C2EN      (1UL << 22)
 #define RCC_APB1ENR_I2C3EN      (1UL << 23)
 
+#define RCC_APB2ENR_SPI1EN      (1UL << 12)
+#define RCC_APB2ENR_SPI4EN      (1UL << 13)
+#define RCC_APB1ENR_SPI1EN      (1UL << 21)
+#define RCC_APB1ENR_SPI2EN      (1UL << 14)
+#define RCC_APB1ENR_SPI3EN      (1UL << 25)
 
 // GPIO MODER bits
 #define GPIO_MODER_INPUT        (0UL)
@@ -368,101 +376,78 @@ typedef struct {
 #define SPI1_BASE           0x40013000UL
 #define SPI2_BASE           0x40003800UL
 #define SPI3_BASE           0x40003C00UL
+#define SPI4_BASE           0x40013400UL
 
-// SPI Register Structure using bitfields
+typedef union {
+    struct {
+        uint32_t CPHA       : 1;    // Clock Phase
+        uint32_t CPOL       : 1;    // Clock Polarity
+        uint32_t MSTR       : 1;    // Master Selection
+        uint32_t BR         : 3;    // Baud Rate Control
+        uint32_t SPE        : 1;    // SPI Enable
+        uint32_t LSBFIRST   : 1;    // Frame Format
+        uint32_t SSI        : 1;    // Internal Slave Select
+        uint32_t SSM        : 1;    // Software Slave Management
+        uint32_t RXONLY     : 1;    // Receive Only
+        uint32_t DFF        : 1;    // Data Frame Format
+        uint32_t CRCNEXT    : 1;    // CRC Transfer Next
+        uint32_t CRCEN      : 1;    // Hardware CRC Calculation Enable
+        uint32_t BIDIOE     : 1;    // Output Enable in Bidirectional Mode
+        uint32_t BIDIMODE   : 1;    // Bidirectional Data Mode Enable
+        uint32_t RESERVED   : 16;   // Reserved bits
+    } fields;
+    uint32_t value;
+} SPI_CR1_TypeDef;
+
+typedef union {
+    struct {
+        uint32_t RXDMAEN    : 1;    // Rx Buffer DMA Enable
+        uint32_t TXDMAEN    : 1;    // Tx Buffer DMA Enable
+        uint32_t SSOE       : 1;    // SS Output Enable
+        uint32_t RESERVED1  : 1;    // Reserved
+        uint32_t FRF        : 1;    // Frame Format
+        uint32_t ERRIE      : 1;    // Error Interrupt Enable
+        uint32_t RXNEIE     : 1;    // RX Buffer Not Empty Interrupt Enable
+        uint32_t TXEIE      : 1;    // Tx Buffer Empty Interrupt Enable
+        uint32_t RESERVED2  : 24;   // Reserved bits
+    } fields;
+    uint32_t value;
+} SPI_CR2_TypeDef;
+
+typedef union {
+    struct {
+        uint32_t RXNE       : 1;    // Receive Buffer Not Empty
+        uint32_t TXE        : 1;    // Transmit Buffer Empty
+        uint32_t CHSIDE     : 1;    // Channel Side
+        uint32_t UDR        : 1;    // Underrun Flag
+        uint32_t CRCERR     : 1;    // CRC Error Flag
+        uint32_t MODF       : 1;    // Mode Fault
+        uint32_t OVR        : 1;    // Overrun Flag
+        uint32_t BSY        : 1;    // Busy Flag
+        uint32_t FRE        : 1;    // Frame Format Error
+        uint32_t RESERVED   : 23;   // Reserved bits
+    } fields;
+    uint32_t value;
+} SPI_SR_TypeDef;
+
 typedef struct {
-    // SPI Control Register 1 (CR1)
-    struct {
-        volatile uint32_t CPHA      : 1;    // Clock phase
-        volatile uint32_t CPOL      : 1;    // Clock polarity
-        volatile uint32_t MSTR      : 1;    // Master selection
-        volatile uint32_t BR        : 3;    // Baud rate control
-        volatile uint32_t SPE       : 1;    // SPI enable
-        volatile uint32_t LSBFIRST  : 1;    // Frame format
-        volatile uint32_t SSI       : 1;    // Internal slave select
-        volatile uint32_t SSM       : 1;    // Software slave management
-        volatile uint32_t RXONLY    : 1;    // Receive only
-        volatile uint32_t DFF       : 1;    // Data frame format
-        volatile uint32_t CRCNEXT   : 1;    // CRC transfer next
-        volatile uint32_t CRCEN     : 1;    // Hardware CRC calculation enable
-        volatile uint32_t BIDIOE    : 1;    // Output enable in bidirectional mode
-        volatile uint32_t BIDIMODE  : 1;    // Bidirectional data mode enable
-        volatile uint32_t Reserved  : 16;   // Reserved bits
-    } CR1;
-
-    // SPI Control Register 2 (CR2)
-    struct {
-        volatile uint32_t RXDMAEN   : 1;    // Rx buffer DMA enable
-        volatile uint32_t TXDMAEN   : 1;    // Tx buffer DMA enable
-        volatile uint32_t SSOE      : 1;    // SS output enable
-        volatile uint32_t Reserved1 : 2;    // Reserved
-        volatile uint32_t ERRIE     : 1;    // Error interrupt enable
-        volatile uint32_t RXNEIE    : 1;    // RX buffer not empty interrupt enable
-        volatile uint32_t TXEIE     : 1;    // Tx buffer empty interrupt enable
-        volatile uint32_t Reserved2 : 24;   // Reserved bits
-    } CR2;
-
-    // SPI Status Register (SR)
-    struct {
-        volatile uint32_t RXNE      : 1;    // Receive buffer not empty
-        volatile uint32_t TXE       : 1;    // Transmit buffer empty
-        volatile uint32_t CHSIDE    : 1;    // Channel side
-        volatile uint32_t UDR       : 1;    // Underrun flag
-        volatile uint32_t CRCERR    : 1;    // CRC error flag
-        volatile uint32_t MODF      : 1;    // Mode fault
-        volatile uint32_t OVR       : 1;    // Overrun flag
-        volatile uint32_t BSY       : 1;    // Busy flag
-        volatile uint32_t Reserved  : 24;   // Reserved bits
-    } SR;
-
-    // SPI Data Register (DR)
-    volatile uint32_t DR;               // Data register
-
-    // SPI CRC Polynomial Register (CRCPR)
-    struct {
-        volatile uint32_t CRCPOLY   : 16;   // CRC polynomial register
-        volatile uint32_t Reserved  : 16;   // Reserved bits
-    } CRCPR;
-
-    // SPI RX CRC Register (RXCRCR)
-    struct {
-        volatile uint32_t RXCRC     : 16;   // Rx CRC register
-        volatile uint32_t Reserved  : 16;   // Reserved bits
-    } RXCRCR;
-
-    // SPI TX CRC Register (TXCRCR)
-    struct {
-        volatile uint32_t TXCRC     : 16;   // Tx CRC register
-        volatile uint32_t Reserved  : 16;   // Reserved bits
-    } TXCRCR;
-
-    // SPI I2S Configuration Register (I2SCFGR)
-    struct {
-        volatile uint32_t CHLEN     : 1;    // Channel length
-        volatile uint32_t DATLEN    : 2;    // Data length to be transferred
-        volatile uint32_t CKPOL     : 1;    // Steady state clock polarity
-        volatile uint32_t I2SSTD    : 2;    // I2S standard selection
-        volatile uint32_t Reserved1 : 1;    // Reserved
-        volatile uint32_t PCMSYNC   : 1;    // PCM frame synchronization
-        volatile uint32_t I2SCFG    : 2;    // I2S configuration mode
-        volatile uint32_t I2SE      : 1;    // I2S Enable
-        volatile uint32_t I2SMOD    : 1;    // I2S mode selection
-        volatile uint32_t Reserved2 : 20;   // Reserved bits
-    } I2SCFGR;
-
-    // SPI I2S Prescaler Register (I2SPR)
-    struct {
-        volatile uint32_t I2SDIV    : 8;    // I2S Linear prescaler
-        volatile uint32_t ODD       : 1;    // Odd factor for the prescaler
-        volatile uint32_t MCKOE     : 1;    // Master clock output enable
-        volatile uint32_t Reserved  : 22;   // Reserved bits
-    } I2SPR;
+    SPI_CR1_TypeDef CR1;        // Control Register 1
+    SPI_CR2_TypeDef CR2;        // Control Register 2
+    SPI_SR_TypeDef  SR;         // Status Register
+    volatile uint32_t DR;       // Data Register
+    volatile uint32_t CRCPR;    // CRC Polynomial Register
+    volatile uint32_t RXCRCR;   // RX CRC Register
+    volatile uint32_t TXCRCR;   // TX CRC Register
+    volatile uint32_t I2SCFGR;  // I2S Configuration Register
+    volatile uint32_t I2SPR;    // I2S Prescaler Register
 } SPI_TypeDef;
+
 
 // SPI Peripheral definitions
 #define SPI1                ((SPI_TypeDef *) SPI1_BASE)
 #define SPI2                ((SPI_TypeDef *) SPI2_BASE)
 #define SPI3                ((SPI_TypeDef *) SPI3_BASE)
+#define SPI4                ((SPI_TypeDef *) SPI4_BASE)
 
 
 #endif /* STM32F411_BASE_H_ */

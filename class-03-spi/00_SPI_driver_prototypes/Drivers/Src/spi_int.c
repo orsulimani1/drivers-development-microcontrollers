@@ -1,5 +1,6 @@
 #include "spi_common.h"
 
+extern void spi_clear_ovrflag(SPI_TypeDef *spi);
 /**
 * @brief Transmit data in interrupt mode
  * @param hspi: SPI handle pointer
@@ -19,7 +20,7 @@ spi_status_t spi_transmit_it(spi_handle_t *hspi, uint8_t *data, uint16_t size)
     
     // Write data to transmit ring buffer
     for (uint16_t i = 0; i < size; i++) {
-        if (!ring_buffer_write(hspi->tx_ring_buffer, data[i])) {
+        if (!ring_buffer_put(hspi->tx_ring_buffer, data[i])) {
             return SPI_STATUS_ERROR;  // Buffer full
         }
     }
@@ -86,7 +87,7 @@ spi_status_t spi_transmit_receive_it(spi_handle_t *hspi, uint8_t *tx_data, uint1
     
     // Write data to transmit ring buffer
     for (uint16_t i = 0; i < size; i++) {
-        if (!ring_buffer_write(hspi->tx_ring_buffer, tx_data[i])) {
+        if (!ring_buffer_put(hspi->tx_ring_buffer, tx_data[i])) {
             return SPI_STATUS_ERROR;  // Buffer full
         }
     }
@@ -153,12 +154,12 @@ void spi_irq_handler(spi_handle_t *hspi)
                 
                 if (hspi->single_transfer_mode && hspi->tx_remaining > 0) {
                     // Single transfer mode - read from ring buffer
-                    if (ring_buffer_read(hspi->tx_ring_buffer, &tx_data)) {
+                    if (ring_buffer_get(hspi->tx_ring_buffer, &tx_data)) {
                         if (hspi->config.datasize == SPI_DATASIZE_8BIT) {
                             *(volatile uint8_t *)&hspi->instance->DR = tx_data;
                         } else {
                             uint8_t tx_data_high = 0xFF;
-                            ring_buffer_read(hspi->tx_ring_buffer, &tx_data_high);
+                            ring_buffer_get(hspi->tx_ring_buffer, &tx_data_high);
                             hspi->instance->DR = (tx_data_high << 8) | tx_data;
                         }
                         hspi->tx_remaining--;
@@ -176,12 +177,12 @@ void spi_irq_handler(spi_handle_t *hspi)
                     }
                 } else {
                     // Continuous mode - read from ring buffer if available
-                    if (ring_buffer_read(hspi->tx_ring_buffer, &tx_data)) {
+                    if (ring_buffer_get(hspi->tx_ring_buffer, &tx_data)) {
                         if (hspi->config.datasize == SPI_DATASIZE_8BIT) {
                             *(volatile uint8_t *)&hspi->instance->DR = tx_data;
                         } else {
                             uint8_t tx_data_high = 0xFF;
-                            ring_buffer_read(hspi->tx_ring_buffer, &tx_data_high);
+                            ring_buffer_get(hspi->tx_ring_buffer, &tx_data_high);
                             hspi->instance->DR = (tx_data_high << 8) | tx_data;
                         }
                     } else {
@@ -224,7 +225,7 @@ void spi_irq_handler(spi_handle_t *hspi)
                 // Store received data in ring buffer
                 if (hspi->config.datasize == SPI_DATASIZE_8BIT) {
                     uint8_t rx_data = *(volatile uint8_t *)&hspi->instance->DR;
-                    if (!ring_buffer_write(hspi->rx_ring_buffer, rx_data)) {
+                    if (!ring_buffer_put(hspi->rx_ring_buffer, rx_data)) {
                         if (hspi->error_callback) {
                             hspi->error_callback();
                         }
@@ -234,8 +235,8 @@ void spi_irq_handler(spi_handle_t *hspi)
                     uint8_t rx_low = rx_data & 0xFF;
                     uint8_t rx_high = (rx_data >> 8) & 0xFF;
                     
-                    if (!ring_buffer_write(hspi->rx_ring_buffer, rx_low) ||
-                        !ring_buffer_write(hspi->rx_ring_buffer, rx_high)) {
+                    if (!ring_buffer_put(hspi->rx_ring_buffer, rx_low) ||
+                        !ring_buffer_put(hspi->rx_ring_buffer, rx_high)) {
                         if (hspi->error_callback) {
                             hspi->error_callback();
                         }
@@ -274,12 +275,12 @@ void spi_irq_handler(spi_handle_t *hspi)
                 
                 if (hspi->single_transfer_mode && hspi->tx_remaining > 0) {
                     // Single transfer mode - read from ring buffer
-                    if (ring_buffer_read(hspi->tx_ring_buffer, &tx_data)) {
+                    if (ring_buffer_get(hspi->tx_ring_buffer, &tx_data)) {
                         if (hspi->config.datasize == SPI_DATASIZE_8BIT) {
                             *(volatile uint8_t *)&hspi->instance->DR = tx_data;
                         } else {
                             uint8_t tx_data_high = 0xFF;
-                            ring_buffer_read(hspi->tx_ring_buffer, &tx_data_high);
+                            ring_buffer_get(hspi->tx_ring_buffer, &tx_data_high);
                             hspi->instance->DR = (tx_data_high << 8) | tx_data;
                         }
                         hspi->tx_remaining--;
@@ -290,12 +291,12 @@ void spi_irq_handler(spi_handle_t *hspi)
                     }
                 } else {
                     // Continuous mode
-                    if (ring_buffer_read(hspi->tx_ring_buffer, &tx_data)) {
+                    if (ring_buffer_get(hspi->tx_ring_buffer, &tx_data)) {
                         if (hspi->config.datasize == SPI_DATASIZE_8BIT) {
                             *(volatile uint8_t *)&hspi->instance->DR = tx_data;
                         } else {
                             uint8_t tx_data_high = 0xFF;
-                            ring_buffer_read(hspi->tx_ring_buffer, &tx_data_high);
+                            ring_buffer_get(hspi->tx_ring_buffer, &tx_data_high);
                             hspi->instance->DR = (tx_data_high << 8) | tx_data;
                         }
                     } else {
@@ -309,7 +310,7 @@ void spi_irq_handler(spi_handle_t *hspi)
                 // Store received data in ring buffer
                 if (hspi->config.datasize == SPI_DATASIZE_8BIT) {
                     uint8_t rx_data = *(volatile uint8_t *)&hspi->instance->DR;
-                    if (!ring_buffer_write(hspi->rx_ring_buffer, rx_data)) {
+                    if (!ring_buffer_put(hspi->rx_ring_buffer, rx_data)) {
                         if (hspi->error_callback) {
                             hspi->error_callback();
                         }
@@ -319,8 +320,8 @@ void spi_irq_handler(spi_handle_t *hspi)
                     uint8_t rx_low = rx_data & 0xFF;
                     uint8_t rx_high = (rx_data >> 8) & 0xFF;
                     
-                    if (!ring_buffer_write(hspi->rx_ring_buffer, rx_low) ||
-                        !ring_buffer_write(hspi->rx_ring_buffer, rx_high)) {
+                    if (!ring_buffer_put(hspi->rx_ring_buffer, rx_low) ||
+                        !ring_buffer_put(hspi->rx_ring_buffer, rx_high)) {
                         if (hspi->error_callback) {
                             hspi->error_callback();
                         }
@@ -357,12 +358,12 @@ void spi_irq_handler(spi_handle_t *hspi)
             // Handle TXE interrupt for continuous transmission
             if (hspi->instance->CR2.fields.TXEIE && hspi->instance->SR.fields.TXE) {
                 uint8_t tx_data;
-                if (ring_buffer_read(hspi->tx_ring_buffer, &tx_data)) {
+                if (ring_buffer_get(hspi->tx_ring_buffer, &tx_data)) {
                     if (hspi->config.datasize == SPI_DATASIZE_8BIT) {
                         *(volatile uint8_t *)&hspi->instance->DR = tx_data;
                     } else {
                         uint8_t tx_data_high = 0xFF;
-                        ring_buffer_read(hspi->tx_ring_buffer, &tx_data_high);
+                        ring_buffer_get(hspi->tx_ring_buffer, &tx_data_high);
                         hspi->instance->DR = (tx_data_high << 8) | tx_data;
                     }
                 } else {
@@ -376,7 +377,7 @@ void spi_irq_handler(spi_handle_t *hspi)
                 // Store received data in ring buffer
                 if (hspi->config.datasize == SPI_DATASIZE_8BIT) {
                     uint8_t rx_data = *(volatile uint8_t *)&hspi->instance->DR;
-                    if (!ring_buffer_write(hspi->rx_ring_buffer, rx_data)) {
+                    if (!ring_buffer_put(hspi->rx_ring_buffer, rx_data)) {
                         if (hspi->error_callback) {
                             hspi->error_callback();
                         }
@@ -386,8 +387,8 @@ void spi_irq_handler(spi_handle_t *hspi)
                     uint8_t rx_low = rx_data & 0xFF;
                     uint8_t rx_high = (rx_data >> 8) & 0xFF;
                     
-                    if (!ring_buffer_write(hspi->rx_ring_buffer, rx_low) ||
-                        !ring_buffer_write(hspi->rx_ring_buffer, rx_high)) {
+                    if (!ring_buffer_put(hspi->rx_ring_buffer, rx_low) ||
+                        !ring_buffer_put(hspi->rx_ring_buffer, rx_high)) {
                         if (hspi->error_callback) {
                             hspi->error_callback();
                         }
@@ -511,7 +512,7 @@ spi_status_t spi_write_ring_buffer(spi_handle_t *hspi, uint8_t *data, uint16_t s
     
     // Write data to ring buffer
     for (uint16_t i = 0; i < size; i++) {
-        if (!ring_buffer_write(hspi->tx_ring_buffer, data[i])) {
+        if (!ring_buffer_put(hspi->tx_ring_buffer, data[i])) {
             return SPI_STATUS_ERROR;  // Buffer full
         }
     }
@@ -538,7 +539,7 @@ uint16_t spi_read_ring_buffer(spi_handle_t *hspi, uint8_t *data, uint16_t max_si
     uint16_t bytes_read = 0;
     
     for (uint16_t i = 0; i < max_size; i++) {
-        if (ring_buffer_read(hspi->rx_ring_buffer, &data[i])) {
+        if (ring_buffer_get(hspi->rx_ring_buffer, &data[i])) {
             bytes_read++;
         } else {
             break;  // Buffer empty

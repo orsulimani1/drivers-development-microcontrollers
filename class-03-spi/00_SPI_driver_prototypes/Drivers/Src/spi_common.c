@@ -7,6 +7,7 @@ spi_state_t spi_get_state(spi_handle_t *hspi);
 
 
 /* ============================== Function Prototypes ============================== */
+static spi_status_t spi_configure_gpio(const spi_pins_t *pins);
 spi_status_t spi_configure_peripheral(SPI_TypeDef *spi, const spi_config_t *config);
 void spi_enable_clock(SPI_TypeDef *spi);
 void spi_disable_clock(SPI_TypeDef *spi);
@@ -241,3 +242,92 @@ static spi_status_t spi_configure_gpio(const spi_pins_t *pins)
 }
 
 
+/* Implementation of missing utility function */
+void spi_clear_ovrflag(SPI_TypeDef *spi)
+{
+    /* Clear OVR flag by reading DR then SR */
+    volatile uint32_t temp;
+    temp = spi->DR;     // Read DR
+    temp = spi->SR.value;    // Read SR
+    (void)temp;         // Suppress unused variable warning
+}
+
+
+/**
+ * @brief Enable SPI peripheral clock
+ * @param spi: SPI peripheral pointer
+ */
+void spi_enable_clock(SPI_TypeDef *spi)
+{
+    if (spi == SPI1) {
+        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+    } else if (spi == SPI2) {
+        RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
+    } else if (spi == SPI3) {
+        RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
+    } else if(spi == SPI4) {
+        RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
+    }
+}
+
+/**
+ * @brief Disable SPI peripheral clock
+ * @param spi: SPI peripheral pointer
+ */
+void spi_disable_clock(SPI_TypeDef *spi)
+{
+    if (spi == SPI1) {
+        RCC->APB2ENR &= ~RCC_APB2ENR_SPI1EN;
+    } else if (spi == SPI2) {
+        RCC->APB1ENR &= ~RCC_APB1ENR_SPI2EN;
+    } else if (spi == SPI3) {
+        RCC->APB1ENR &= ~RCC_APB1ENR_SPI3EN;
+    }else if(spi == SPI4) {
+        RCC->APB1ENR &= ~RCC_APB1ENR_SPI3EN;
+    }
+}
+
+/**
+ * @brief Configure SPI peripheral registers
+ * @param spi: SPI peripheral pointer
+ * @param config: SPI configuration structure
+ * @return spi_status_t: Operation status
+ */
+spi_status_t spi_configure_peripheral(SPI_TypeDef *spi, const spi_config_t *config)
+{
+    // Disable SPI before configuration
+    spi->CR1.fields.SPE = 0;
+
+    // Reset CR1 register
+    spi->CR1.value = 0;
+
+    // Set clock polarity and phase
+    spi->CR1.fields.CPOL = (config->cpol == SPI_CPOL_HIGH) ? 1 : 0;
+    spi->CR1.fields.CPHA = (config->cpha == SPI_CPHA_2EDGE) ? 1 : 0;
+
+    // Set master mode
+    spi->CR1.fields.MSTR = 1;
+
+    // Set baud rate prescaler
+    spi->CR1.fields.BR = config->prescaler;
+
+    // Set bit order
+    spi->CR1.fields.LSBFIRST = (config->firstbit == SPI_FIRSTBIT_LSB) ? 1 : 0;
+
+    // Set data frame format
+    spi->CR1.fields.DFF = (config->datasize == SPI_DATASIZE_16BIT) ? 1 : 0;
+
+    // Set NSS management
+    if (config->nss == SPI_NSS_SOFT) {
+        spi->CR1.fields.SSM = 1;
+        spi->CR1.fields.SSI = 1;
+    }
+
+    // Configure CR2 register
+    spi->CR2.value = 0;
+
+    // Enable error interrupts
+    spi->CR2.fields.ERRIE = 1;
+
+    return SPI_STATUS_OK;
+}

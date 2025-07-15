@@ -11,7 +11,7 @@
 #include "stm32f411_base.h"
 #include "i2c_common_driver.h"
 
-
+// use i2c_init() from the common driver
 
 // Master mode operations
 i2c_status_t i2c_master_transmit(i2c_config_t *i2c, uint8_t slave_addr,

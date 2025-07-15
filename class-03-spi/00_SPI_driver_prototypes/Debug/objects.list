@@ -1,0 +1,8 @@
+"./Drivers/Src/gpio_driver.o"
+"./Drivers/Src/spi_common.o"
+"./Drivers/Src/spi_int.o"
+"./Drivers/Src/spi_polling.o"
+"./Src/main.o"
+"./Src/syscalls.o"
+"./Src/sysmem.o"
+"./Startup/startup_stm32f411vetx.o"
